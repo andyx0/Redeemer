@@ -1,3 +1,4 @@
+import timeit
 import requests
 import re
 from configparser import ConfigParser
@@ -6,16 +7,28 @@ from itertools import product
 codeDict = ['2', '4', '6', '7', '9', 'Q', 'W', 'R', 'T', 'Y', 'P',
             'D', 'G', 'H', 'J', 'K', 'L', 'Z', 'X', 'C', 'V', 'B', 'N', 'M']
 
+
+class ansi:
+    END = '\033[0m'
+    BOLD = '\033[1m'
+    RED = '\033[31m'
+    GREEN = '\033[32m'
+    YELLOW = '\033[33m'
+    BLUE = '\033[34m'
+    CLEAR = '\033[2J'
+
+
 if __name__ == '__main__':
     config = ConfigParser()
 
     config.read('settings.ini')
     session_id = config.get('Session', 'session_id')
-    source_codes = config.get('Global', 'redeem_codes')
     csrf_token = config.get('Session', 'csrf_token')
+    source_codes = config.get('Global', 'redeem_codes')
+    limit = 10  # redeem 10 codes at a time (web client limit)
 
-    print("session_id: " + session_id)
-    print("csrf_token: " + csrf_token)
+    print("session_id:", session_id)
+    print("csrf_token:", csrf_token)
 
     cookies = {
         'csrftoken': csrf_token,
@@ -26,7 +39,7 @@ if __name__ == '__main__':
 
     headers = {
         'Origin': 'https://www.pokemon.com',
-        'Accept-Encoding': 'gzip, deflate, br',
+        'Accept-Encoding': 'gzip, deflate',
         'Accept-Language': 'en-US,en;q=0.9',
         'Upgrade-Insecure-Requests': '1',
         'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/65.0.3325.181 Chrome/65.0.3325.181 Safari/537.36',
@@ -37,13 +50,13 @@ if __name__ == '__main__':
         'Connection': 'keep-alive'
     }
 
-    def redeem_codes(arr=[]):
-        print("Num codes being redeemed this request: " + str(len(arr)))
-        print("Codes being redeemed this request: " + str(arr))
+    def redeem_codes(codes=[]):
+        print("Number of codes being redeemed this request:", len(codes))
+        print("Codes being redeemed this request:", codes)
         payload = {
             'csrfmiddlewaretoken': csrf_token,
-            'code': arr,
-            'hidden_code': arr
+            'code': codes,
+            'hidden_code': codes
         }
         response = requests.post(
             'https://www.pokemon.com/us/pokemon-trainer-club/enter-codes',
@@ -55,20 +68,51 @@ if __name__ == '__main__':
         # text_file = open("response.txt", "wt")
         # text_file.write(response.text)
         # text_file.close()
-        for item in response.text.split("\n"):
-            for elem in arr:
-                if elem in item:
-                    print(re.sub('<[^<]+?>', '', item.strip()))  # remove html tags with regex
-                    # print(item.strip())
+        def solution1():
+            pattern = re.compile(r'<li>(.+?)<em>(.+?)</em></li>')  # isolate lines with redemption results
+            results = pattern.findall(response.text)
+            for item in results:
+                if "code" in item[1].lower():
+                    # ansi.RED+''.join(item)
+                    print(ansi.RED+''.join(item))
+                else:
+                    print(ansi.GREEN+item[0]+item[1])
+            print(ansi.END, end='')
+        def solution2():
+            for item in response.text.splitlines():
+                if "<em>" in item:  # only located in lines with redemption results
+                    for elem in codes:
+                        if elem in item:
+                            output = re.sub('<[^<]+?>', '', item.strip())  # remove html tags with regex
+                            if "code" in output.lower():
+                                # ansi.RED+output
+                                print(ansi.RED+output)
+                            else:
+                                print(ansi.GREEN+output)
+            print(ansi.END, end='')
+        def solution3():
+            for item in response.text.splitlines():
+                for elem in codes:
+                    if elem in item:
+                        output = re.sub('<[^<]+?>', '', item.strip())  # remove html tags with regex
+                        if "code" in output.lower():
+                            # ansi.RED+output
+                            print(ansi.RED+output)
+                        else:
+                            print(ansi.GREEN+output)
+            print(ansi.END, end='')
+        solution1()
+        # print(ansi.GREEN+"Time for solution 1:", timeit.timeit(solution1, number=1000), ansi.END)
+        # print(ansi.GREEN+"Time for solution 2:", timeit.timeit(solution2, number=1000), ansi.END)
+        # print(ansi.GREEN+"Time for solution 3:", timeit.timeit(solution3, number=1000), ansi.END)
     try:
         with open(source_codes) as sc:
-            line = sc.readline()
+            line = " "
             while line != "":
-                arr = []
-                # limit = 100  # redeem 100 codes at a time (server response limit?)
-                limit = 10  # redeem 10 codes at a time (web client limit)
+                codes = []
                 for x in range(limit):
-                    if line == "":
+                    line = sc.readline()
+                    if line.strip() == "":
                         break
                     strippedLine = line.replace("-", "").rstrip().upper()
                     unknownCount = strippedLine.count("?")
@@ -78,14 +122,13 @@ if __name__ == '__main__':
                             guess = strippedLine
                             for char in tuple:
                                 guess = guess.replace("?", char, 1)
-                            arr.append(guess)
-                            if len(arr) >= limit:  # break up large products into multiple requests
-                                redeem_codes(arr)
-                                arr = []
+                            codes.append(guess)
+                            if len(codes) >= limit:  # break up large products into multiple requests
+                                redeem_codes(codes)
+                                codes = []
                     else:
-                        arr.append(strippedLine)
-                    line = sc.readline()
-                redeem_codes(arr)
+                        codes.append(strippedLine)
+                redeem_codes(codes)
         sc.close
     except:
         import sys
