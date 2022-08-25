@@ -76,31 +76,31 @@ if __name__ == '__main__':
                     # ansi.RED+''.join(item)
                     print(ansi.RED+''.join(item))
                 else:
-                    print(ansi.GREEN+item[0]+item[1])
+                    print(ansi.GREEN+''.join(item))
             print(ansi.END, end='')
-        def solution2():
-            for item in response.text.splitlines():
-                if "<em>" in item:  # only located in lines with redemption results
-                    for elem in codes:
-                        if elem in item:
-                            output = re.sub('<[^<]+?>', '', item.strip())  # remove html tags with regex
-                            if "code" in output.lower():
-                                # ansi.RED+output
-                                print(ansi.RED+output)
-                            else:
-                                print(ansi.GREEN+output)
-            print(ansi.END, end='')
-        def solution3():
-            for item in response.text.splitlines():
-                for elem in codes:
-                    if elem in item:
-                        output = re.sub('<[^<]+?>', '', item.strip())  # remove html tags with regex
-                        if "code" in output.lower():
-                            # ansi.RED+output
-                            print(ansi.RED+output)
-                        else:
-                            print(ansi.GREEN+output)
-            print(ansi.END, end='')
+        # def solution2():
+        #     for item in response.text.splitlines():
+        #         if "<em>" in item:  # only located in lines with redemption results
+        #             for elem in codes:
+        #                 if elem in item:
+        #                     output = re.sub('<[^<]+?>', '', item.strip())  # remove html tags with regex
+        #                     if "code" in output.lower():
+        #                         ansi.RED+output
+        #                         # print(ansi.RED+output)
+        #                     else:
+        #                         print(ansi.GREEN+output)
+        #     print(ansi.END, end='')
+        # def solution3():
+        #     for item in response.text.splitlines():
+        #         for elem in codes:
+        #             if elem in item:
+        #                 output = re.sub('<[^<]+?>', '', item.strip())  # remove html tags with regex
+        #                 if "code" in output.lower():
+        #                     ansi.RED+output
+        #                     # print(ansi.RED+output)
+        #                 else:
+        #                     print(ansi.GREEN+output)
+        #     print(ansi.END, end='')
         solution1()
         # print(ansi.GREEN+"Time for solution 1:", timeit.timeit(solution1, number=1000), ansi.END)
         # print(ansi.GREEN+"Time for solution 2:", timeit.timeit(solution2, number=1000), ansi.END)
