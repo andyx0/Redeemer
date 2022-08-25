@@ -1,8 +1,8 @@
 import requests
-import json
 from configparser import ConfigParser
 from itertools import product
 from pokemonCodeRedeemer import codeDict
+from pokemonCodeRedeemer import ansi
 
 
 if __name__ == '__main__':
@@ -27,13 +27,17 @@ if __name__ == '__main__':
             cookies=cookies,
             data=data)
         # print(response.text)
-        code_json = json.loads(response.text)
-        if code_json['valid']:
-            print("{}: {}".format(code_json['coupon_code'], code_json['coupon_title']))
-            # cc.write("{},{},{} \n".format(
-            # 	code_json['valid'], code_json['coupon_code'], code_json['coupon_title'].encode('utf-8')))
+        code_json = response.json()
+        if code:
+            if code_json['valid']:
+                print(ansi.GREEN+code_json['coupon_code']+": "+code_json['coupon_title'])
+                # cc.write("{},{},{} \n".format(
+                # 	code_json['valid'], code_json['coupon_code'], code_json['coupon_title'].encode('utf-8')))
+            else:
+                print(ansi.RED+code_json['coupon_code']+": "+code_json['error_message'])
         else:
-            print("{}: {}".format(code_json['coupon_code'], code_json['error_message']))
+            print(ansi.RED+code_json['error_msg'])
+        print(ansi.END, end='')
 
     try:
         with open(source_codes) as sc:
