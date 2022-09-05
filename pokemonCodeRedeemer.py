@@ -1,4 +1,4 @@
-import timeit
+# import timeit
 import requests
 import re
 from configparser import ConfigParser
@@ -71,12 +71,18 @@ if __name__ == '__main__':
         def solution1():
             pattern = re.compile(r'<li>(.+?)<em>(.+?)</em></li>')  # isolate lines with redemption results
             results = pattern.findall(response.text)
-            for item in results:
-                if "code" in item[1].lower():
-                    # ansi.RED+''.join(item)
-                    print(ansi.RED+''.join(item))
-                else:
-                    print(ansi.GREEN+''.join(item))
+            if len(results):
+                for item in results:
+                    if "code" in item[1].lower():
+                        # ansi.RED+''.join(item)
+                        print(ansi.RED+''.join(item))
+                    else:
+                        print(ansi.GREEN+''.join(item))
+            else:
+                pattern = re.compile(r'<div class="alert.+?>((.|\n)+?)</div>')  # isolate error messages
+                results = pattern.findall(response.text)
+                for item in results:
+                    print(re.sub('<[^<]+?>', '', ansi.RED+''.join(item).strip()))  # remove html tags with regex
             print(ansi.END, end='')
         # def solution2():
         #     for item in response.text.splitlines():
@@ -101,10 +107,10 @@ if __name__ == '__main__':
         #                 else:
         #                     print(ansi.GREEN+output)
         #     print(ansi.END, end='')
-        solution1()
         # print(ansi.GREEN+"Time for solution 1:", timeit.timeit(solution1, number=1000), ansi.END)
         # print(ansi.GREEN+"Time for solution 2:", timeit.timeit(solution2, number=1000), ansi.END)
         # print(ansi.GREEN+"Time for solution 3:", timeit.timeit(solution3, number=1000), ansi.END)
+        solution1()
     try:
         with open(source_codes) as sc:
             line = " "
@@ -112,9 +118,9 @@ if __name__ == '__main__':
                 codes = []
                 for x in range(limit):
                     line = sc.readline()
-                    if line.strip() == "":
-                        break
                     strippedLine = line.replace("-", "").rstrip().upper()
+                    if strippedLine == "":
+                        break
                     unknownCount = strippedLine.count("?")
                     if unknownCount > 0:
                         cartesian_product = product(codeDict, repeat=unknownCount)
