@@ -52,7 +52,7 @@ if __name__ == '__main__':
 
     def redeem_codes(codes=[]):
         print("Number of codes being redeemed this request:", len(codes))
-        print("Codes being redeemed this request:", codes)
+        # print("Codes being redeemed this request:", codes)
         payload = {
             'csrfmiddlewaretoken': csrf_token,
             'code': codes,
@@ -69,11 +69,11 @@ if __name__ == '__main__':
         # text_file.write(response.text)
         # text_file.close()
         def solution1():
-            pattern = re.compile(r'<li>(.+?)<em>(.+?)</em></li>')  # isolate lines with redemption results
+            pattern = re.compile(r'<li>(.+: )(?:<em>)?(.+?)(?:</em>)?</li>')  # isolate lines with redemption results
             results = pattern.findall(response.text)
-            if len(results):
+            if results:
                 for item in results:
-                    if "code" in item[1].lower():
+                    if "CODE" in item[1].upper():
                         # ansi.RED+''.join(item)
                         print(ansi.RED+''.join(item))
                     else:
