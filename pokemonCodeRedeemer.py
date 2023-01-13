@@ -65,15 +65,14 @@ if __name__ == '__main__':
             data=payload)
         print("Response received")
         # print(response.text)
-        # text_file = open("response.txt", "wt")
-        # text_file.write(response.text)
-        # text_file.close()
+        # with open('response.txt', 'wt') as text_file:
+        #     text_file.write(response.text)
         def solution1():
             pattern = re.compile(r'<li>(.+: )(?:<em>)?(.+?)(?:</em>)?</li>')  # isolate lines with redemption results
             results = pattern.findall(response.text)
             if results:
                 for item in results:
-                    if "CODE" in item[1].upper():
+                    if 'CODE' in item[1].upper():
                         # ansi.RED+''.join(item)
                         print(ansi.RED+''.join(item))
                     else:
@@ -82,15 +81,15 @@ if __name__ == '__main__':
                 pattern = re.compile(r'<div class="alert.+?>((.|\n)+?)</div>')  # isolate error messages
                 results = pattern.findall(response.text)
                 for item in results:
-                    print(re.sub('<[^<]+?>', '', ansi.RED+''.join(item).strip()))  # remove html tags with regex
+                    print(re.sub(r'<[^<]+?>', '', ansi.RED+''.join(item).strip()))  # remove html tags with regex
             print(ansi.END, end='')
         # def solution2():
         #     for item in response.text.splitlines():
-        #         if "<em>" in item:  # only located in lines with redemption results
+        #         if '<em>' in item:  # only located in lines with redemption results
         #             for elem in codes:
         #                 if elem in item:
-        #                     output = re.sub('<[^<]+?>', '', item.strip())  # remove html tags with regex
-        #                     if "code" in output.lower():
+        #                     output = re.sub(r'<[^<]+?>', '', item.strip())  # remove html tags with regex
+        #                     if 'code' in output.lower():
         #                         ansi.RED+output
         #                         # print(ansi.RED+output)
         #                     else:
@@ -100,8 +99,8 @@ if __name__ == '__main__':
         #     for item in response.text.splitlines():
         #         for elem in codes:
         #             if elem in item:
-        #                 output = re.sub('<[^<]+?>', '', item.strip())  # remove html tags with regex
-        #                 if "code" in output.lower():
+        #                 output = re.sub(r'<[^<]+?>', '', item.strip())  # remove html tags with regex
+        #                 if 'code' in output.lower():
         #                     ansi.RED+output
         #                     # print(ansi.RED+output)
         #                 else:
@@ -113,21 +112,21 @@ if __name__ == '__main__':
         solution1()
     try:
         with open(source_codes) as sc:
-            line = " "
-            while line != "":
+            line = ' '
+            while line != '':
                 codes = []
                 for x in range(limit):
                     line = sc.readline()
-                    strippedLine = line.replace("-", "").rstrip().upper()
-                    if strippedLine == "":
+                    strippedLine = line.replace('-', '').rstrip().upper()
+                    if strippedLine == '':
                         break
-                    unknownCount = strippedLine.count("?")
+                    unknownCount = strippedLine.count('?')
                     if unknownCount > 0:
                         cartesian_product = product(codeDict, repeat=unknownCount)
                         for tuple in cartesian_product:
                             guess = strippedLine
                             for char in tuple:
-                                guess = guess.replace("?", char, 1)
+                                guess = guess.replace('?', char, 1)
                             codes.append(guess)
                             if len(codes) >= limit:  # break up large products into multiple requests
                                 redeem_codes(codes)
@@ -135,10 +134,9 @@ if __name__ == '__main__':
                     else:
                         codes.append(strippedLine)
                 redeem_codes(codes)
-        sc.close
     except:
         import sys
         print(sys.exc_info()[0])
         import traceback
         print(traceback.format_exc())
-        input("Press Enter to continue ...")
+        input("Press Enter to continue...")
