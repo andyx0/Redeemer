@@ -18,6 +18,57 @@ class ansi:
     CLEAR = '\033[2J'
 
 
+def solution1(response):
+    pattern = re.compile(r'<li>(.+: )(?:<em>)?(.+?)(?:</em>)?</li>')  # isolate lines with redemption results
+    results = pattern.findall(response)
+    if results:
+        for item in results:
+            if 'CODE' in item[1].upper():
+                # ansi.RED+''.join(item)
+                print(ansi.RED+''.join(item))
+            else:
+                print(ansi.GREEN+''.join(item))
+    else:
+        pattern = re.compile(r'<div class="alert.+?>((.|\n)+?)</div>')  # isolate error messages
+        results = pattern.findall(response)
+        for item in results:
+            print(re.sub(r'<[^<]+?>', '', ansi.RED+''.join(item).strip()))  # remove html tags with regex
+    print(ansi.END, end='')
+
+
+# def solution2(response):
+#     for item in response.splitlines():
+#         if '<em>' in item:  # only located in lines with redemption results
+#             for elem in codes:
+#                 if elem in item:
+#                     output = re.sub(r'<[^<]+?>', '', item.strip())  # remove html tags with regex
+#                     if 'code' in output.lower():
+#                         ansi.RED+output
+#                         # print(ansi.RED+output)
+#                     else:
+#                         print(ansi.GREEN+output)
+#     print(ansi.END, end='')
+
+
+# def solution3(response):
+#     for item in response.splitlines():
+#         for elem in codes:
+#             if elem in item:
+#                 output = re.sub(r'<[^<]+?>', '', item.strip())  # remove html tags with regex
+#                 if 'code' in output.lower():
+#                     ansi.RED+output
+#                     # print(ansi.RED+output)
+#                 else:
+#                     print(ansi.GREEN+output)
+#     print(ansi.END, end='')
+
+
+def chunks(lst, n):
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
+
+
 if __name__ == '__main__':
     config = ConfigParser()
 
@@ -67,73 +118,30 @@ if __name__ == '__main__':
         # print(response.text)
         # with open('response.txt', 'wt') as text_file:
         #     text_file.write(response.text)
-        def solution1():
-            pattern = re.compile(r'<li>(.+: )(?:<em>)?(.+?)(?:</em>)?</li>')  # isolate lines with redemption results
-            results = pattern.findall(response.text)
-            if results:
-                for item in results:
-                    if 'CODE' in item[1].upper():
-                        # ansi.RED+''.join(item)
-                        print(ansi.RED+''.join(item))
-                    else:
-                        print(ansi.GREEN+''.join(item))
-            else:
-                pattern = re.compile(r'<div class="alert.+?>((.|\n)+?)</div>')  # isolate error messages
-                results = pattern.findall(response.text)
-                for item in results:
-                    print(re.sub(r'<[^<]+?>', '', ansi.RED+''.join(item).strip()))  # remove html tags with regex
-            print(ansi.END, end='')
-        # def solution2():
-        #     for item in response.text.splitlines():
-        #         if '<em>' in item:  # only located in lines with redemption results
-        #             for elem in codes:
-        #                 if elem in item:
-        #                     output = re.sub(r'<[^<]+?>', '', item.strip())  # remove html tags with regex
-        #                     if 'code' in output.lower():
-        #                         ansi.RED+output
-        #                         # print(ansi.RED+output)
-        #                     else:
-        #                         print(ansi.GREEN+output)
-        #     print(ansi.END, end='')
-        # def solution3():
-        #     for item in response.text.splitlines():
-        #         for elem in codes:
-        #             if elem in item:
-        #                 output = re.sub(r'<[^<]+?>', '', item.strip())  # remove html tags with regex
-        #                 if 'code' in output.lower():
-        #                     ansi.RED+output
-        #                     # print(ansi.RED+output)
-        #                 else:
-        #                     print(ansi.GREEN+output)
-        #     print(ansi.END, end='')
-        # print(ansi.GREEN+"Time for solution 1:", timeit.timeit(solution1, number=1000), ansi.END)
-        # print(ansi.GREEN+"Time for solution 2:", timeit.timeit(solution2, number=1000), ansi.END)
-        # print(ansi.GREEN+"Time for solution 3:", timeit.timeit(solution3, number=1000), ansi.END)
-        solution1()
+        # print(ansi.GREEN+"Time for solution 1:", timeit.timeit(lambda: solution1(response), number=1000), ansi.END)
+        # print(ansi.GREEN+"Time for solution 2:", timeit.timeit(lambda: solution2(response), number=1000), ansi.END)
+        # print(ansi.GREEN+"Time for solution 3:", timeit.timeit(lambda: solution3(response), number=1000), ansi.END)
+        solution1(response.text)
+
     try:
         with open(source_codes) as sc:
-            line = ' '
-            while line != '':
-                codes = []
-                for x in range(limit):
-                    line = sc.readline()
-                    strippedLine = line.replace('-', '').rstrip().upper()
-                    if strippedLine == '':
-                        break
-                    unknownCount = strippedLine.count('?')
-                    if unknownCount > 0:
-                        cartesian_product = product(codeDict, repeat=unknownCount)
-                        for tuple in cartesian_product:
-                            guess = strippedLine
-                            for char in tuple:
-                                guess = guess.replace('?', char, 1)
-                            codes.append(guess)
-                            if len(codes) >= limit:  # break up large products into multiple requests
-                                redeem_codes(codes)
-                                codes = []
-                    else:
-                        codes.append(strippedLine)
-                redeem_codes(codes)
+            codes = []
+            for line in sc:
+                strippedLine = line.replace('-', '').rstrip().upper()
+                if strippedLine == '':
+                    break
+                unknownCount = strippedLine.count('?')
+                if unknownCount > 0:
+                    cartesian_product = product(codeDict, repeat=unknownCount)
+                    for tuple in cartesian_product:
+                        guess = strippedLine
+                        for char in tuple:
+                            guess = guess.replace('?', char, 1)
+                        codes.append(guess)
+                else:
+                    codes.append(strippedLine)
+            for chunk in chunks(codes, limit):
+                redeem_codes(chunk)
     except:
         import sys
         print(sys.exc_info()[0])

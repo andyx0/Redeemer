@@ -5,6 +5,7 @@ from configparser import ConfigParser
 from itertools import product
 from pokemonCodeRedeemer import codeDict
 from pokemonCodeRedeemer import ansi
+from pokemonCodeRedeemer import chunks
 
 
 def process_results(response):
@@ -24,12 +25,6 @@ def process_results(response):
     print(ansi.END, end='')
 
 
-def chunks(lst, n):
-    """Yield successive n-sized chunks from lst."""
-    for i in range(0, len(lst), n):
-        yield lst[i:i + n]
-
-
 if __name__ == '__main__':
     config = ConfigParser()
 
@@ -38,9 +33,6 @@ if __name__ == '__main__':
     csrf_token = config.get('Session', 'csrf_token')
     source_codes = config.get('Global', 'redeem_codes')
     limit = 10  # redeem 10 codes at a time (web client limit)
-    # limit = 50  # redeem 50 codes at a time (server response limit?)
-    # limit = 100  # redeem 100 codes at a time (server response limit?)
-    # limit = 200  # redeem 200 codes at a time (server response limit?)
 
     print("session_id:", session_id)
     print("csrf_token:", csrf_token)
