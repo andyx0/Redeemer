@@ -1,11 +1,36 @@
-# import timeit
-import requests
 import re
+import requests
+# import timeit
 from configparser import ConfigParser
 from itertools import product
 
-codeDict = ['2', '4', '6', '7', '9', 'Q', 'W', 'R', 'T', 'Y', 'P',
-            'D', 'G', 'H', 'J', 'K', 'L', 'Z', 'X', 'C', 'V', 'B', 'N', 'M']
+code_dict = set('24679BCDGHJKLMNPQRTVWXYZ')
+
+config = ConfigParser()
+config.read('settings.ini')
+session_id = config.get('Session', 'session_id')
+csrf_token = config.get('Session', 'csrf_token')
+source_codes = config.get('Global', 'redeem_codes')
+
+cookies = {
+    'csrftoken': csrf_token,
+    'main_session_id': session_id,
+    'op_session_id': session_id,
+    'django_language': 'en'
+}
+
+headers = {
+    'Origin': 'https://www.pokemon.com',
+    'Accept-Encoding': 'gzip, deflate',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Upgrade-Insecure-Requests': '1',
+    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/65.0.3325.181 Chrome/65.0.3325.181 Safari/537.36',
+    'Content-Type': 'application/x-www-form-urlencoded',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+    'Cache-control': 'max-age=0',
+    'Referer': 'https://www.pokemon.com/us/pokemon-trainer-club/enter-codes',
+    'Connection': 'keep-alive'
+}
 
 
 class ansi:
@@ -69,79 +94,58 @@ def chunks(lst, n):
         yield lst[i:i + n]
 
 
-if __name__ == '__main__':
-    config = ConfigParser()
+def redeem_codes(codes):
+    print("Number of codes being redeemed this request:", len(codes))
+    # print("Codes being redeemed this request:", codes)
+    payload = {
+        'csrfmiddlewaretoken': csrf_token,
+        'code': codes,
+        'hidden_code': codes
+    }
+    response = requests.post(
+        'https://www.pokemon.com/us/pokemon-trainer-club/enter-codes',
+        headers=headers,
+        cookies=cookies,
+        data=payload)
+    print("Response received")
+    # print(response.text)
+    # with open('response.txt', 'wt') as text_file:
+    #     text_file.write(response.text)
+    # print(ansi.GREEN+"Time for solution 1:", timeit.timeit(lambda: solution1(response), number=1000), ansi.END)
+    # print(ansi.GREEN+"Time for solution 2:", timeit.timeit(lambda: solution2(response), number=1000), ansi.END)
+    # print(ansi.GREEN+"Time for solution 3:", timeit.timeit(lambda: solution3(response), number=1000), ansi.END)
+    solution1(response.text)
 
-    config.read('settings.ini')
-    session_id = config.get('Session', 'session_id')
-    csrf_token = config.get('Session', 'csrf_token')
-    source_codes = config.get('Global', 'redeem_codes')
+
+def main():
     limit = 10  # redeem 10 codes at a time (web client limit)
 
     print("session_id:", session_id)
     print("csrf_token:", csrf_token)
 
-    cookies = {
-        'csrftoken': csrf_token,
-        'main_session_id': session_id,
-        'op_session_id': session_id,
-        'django_language': 'en'
-    }
+    with open(source_codes) as sc:
+        codes = []
+        for line in sc:
+            strippedLine = line.replace('-', '').rstrip().upper()
+            if strippedLine == '':
+                break
+            unknownCount = strippedLine.count('?')
+            if unknownCount > 0:
+                cartesian_product = product(code_dict, repeat=unknownCount)
+                for tupl in cartesian_product:
+                    guess = strippedLine
+                    for char in tupl:
+                        guess = guess.replace('?', char, 1)
+                    codes.append(guess)
+            else:
+                codes.append(strippedLine)
+        for chunk in chunks(codes, limit):
+            redeem_codes(chunk)
 
-    headers = {
-        'Origin': 'https://www.pokemon.com',
-        'Accept-Encoding': 'gzip, deflate',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Upgrade-Insecure-Requests': '1',
-        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/65.0.3325.181 Chrome/65.0.3325.181 Safari/537.36',
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-        'Cache-control': 'max-age=0',
-        'Referer': 'https://www.pokemon.com/us/pokemon-trainer-club/enter-codes',
-        'Connection': 'keep-alive'
-    }
 
-    def redeem_codes(codes=[]):
-        print("Number of codes being redeemed this request:", len(codes))
-        # print("Codes being redeemed this request:", codes)
-        payload = {
-            'csrfmiddlewaretoken': csrf_token,
-            'code': codes,
-            'hidden_code': codes
-        }
-        response = requests.post(
-            'https://www.pokemon.com/us/pokemon-trainer-club/enter-codes',
-            headers=headers,
-            cookies=cookies,
-            data=payload)
-        print("Response received")
-        # print(response.text)
-        # with open('response.txt', 'wt') as text_file:
-        #     text_file.write(response.text)
-        # print(ansi.GREEN+"Time for solution 1:", timeit.timeit(lambda: solution1(response), number=1000), ansi.END)
-        # print(ansi.GREEN+"Time for solution 2:", timeit.timeit(lambda: solution2(response), number=1000), ansi.END)
-        # print(ansi.GREEN+"Time for solution 3:", timeit.timeit(lambda: solution3(response), number=1000), ansi.END)
-        solution1(response.text)
-
+if __name__ == '__main__':
     try:
-        with open(source_codes) as sc:
-            codes = []
-            for line in sc:
-                strippedLine = line.replace('-', '').rstrip().upper()
-                if strippedLine == '':
-                    break
-                unknownCount = strippedLine.count('?')
-                if unknownCount > 0:
-                    cartesian_product = product(codeDict, repeat=unknownCount)
-                    for tuple in cartesian_product:
-                        guess = strippedLine
-                        for char in tuple:
-                            guess = guess.replace('?', char, 1)
-                        codes.append(guess)
-                else:
-                    codes.append(strippedLine)
-            for chunk in chunks(codes, limit):
-                redeem_codes(chunk)
+        main()
     except:
         import sys
         print(sys.exc_info()[0])
