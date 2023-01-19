@@ -1,29 +1,13 @@
-import re
 import asyncio
 import aiohttp
-from itertools import product
-from pokemonCodeRedeemer import code_dict, session_id, csrf_token, source_codes
+from pokemonCodeRedeemer import session_id, csrf_token, source_codes
 from pokemonCodeRedeemer import cookies, headers
-from pokemonCodeRedeemer import ansi
-from pokemonCodeRedeemer import chunks
+from pokemonCodeRedeemer import chunks, solution1, load_codes
 
 
 async def process_results(response):
     print("Response received")
-    pattern = re.compile(r'<li>(.+: )(?:<em>)?(.+?)(?:</em>)?</li>')  # isolate lines with redemption results
-    results = pattern.findall(response)
-    if results:
-        for item in results:
-            if 'CODE' in item[1].upper():
-                print(ansi.RED+''.join(item))
-            else:
-                print(ansi.GREEN+''.join(item))
-    else:
-        pattern = re.compile(r'<div class="alert.+?>((.|\n)+?)</div>')  # isolate error messages
-        results = pattern.findall(response)
-        for item in results:
-            print(re.sub(r'<[^<]+?>', '', ansi.RED+''.join(item).strip()))  # remove html tags with regex
-    print(ansi.END, end='')
+    solution1(response)
 
 
 async def redeem_codes(session, codes):
@@ -44,22 +28,7 @@ async def main():
     print("session_id:", session_id)
     print("csrf_token:", csrf_token)
 
-    codes = []
-    with open(source_codes) as sc:
-        for line in sc:
-            strippedLine = line.replace('-', '').rstrip().upper()
-            if strippedLine == '':
-                break
-            unknownCount = strippedLine.count('?')
-            if unknownCount > 0:
-                cartesian_product = product(code_dict, repeat=unknownCount)
-                for tupl in cartesian_product:
-                    guess = strippedLine
-                    for char in tupl:
-                        guess = guess.replace('?', char, 1)
-                    codes.append(guess)
-            else:
-                codes.append(strippedLine)
+    codes = load_codes(source_codes)
     timeout = aiohttp.ClientTimeout(total=1200)
     async with aiohttp.ClientSession(timeout=timeout, headers=headers, cookies=cookies) as session:
         await asyncio.gather(*(redeem_codes(session, chunk) for chunk in chunks(codes, limit)))

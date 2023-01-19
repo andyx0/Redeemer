@@ -1,8 +1,6 @@
 import requests
 from configparser import ConfigParser
-from itertools import product
-from pokemonCodeRedeemer import code_dict
-from pokemonCodeRedeemer import ansi
+from pokemonCodeRedeemer import ansi, load_codes
 
 config = ConfigParser()
 config.read('settings.ini')
@@ -15,6 +13,20 @@ cookies = {
 }
 
 
+def process_results(code_json):
+    if 'detail' in code_json:
+        print(ansi.RED+code_json['detail'])
+    elif 'error_msg' in code_json:
+        print(ansi.RED+code_json['error_msg'])
+    elif 'error_message' in code_json:
+        print(ansi.RED+code_json['coupon_code']+":", code_json['error_message'])
+    elif 'valid' in code_json:
+        print(ansi.GREEN+code_json['coupon_code']+":", code_json['coupon_title'])
+        # cc.write("{},{},{} \n".format(
+        # 	code_json['valid'], code_json['coupon_code'], code_json['coupon_title'].encode('utf-8')))
+    print(ansi.END, end='')
+
+
 def check_code(code):
     data = [('code', code)]
     response = requests.post(
@@ -23,20 +35,10 @@ def check_code(code):
         cookies=cookies,
         data=data)
     # print(response.text)
-    code_json = response.json()
-    if code:
-        if code_json['valid']:
-            print(ansi.GREEN+code_json['coupon_code']+":", code_json['coupon_title'])
-            # cc.write("{},{},{} \n".format(
-            # 	code_json['valid'], code_json['coupon_code'], code_json['coupon_title'].encode('utf-8')))
-        else:
-            print(ansi.RED+code_json['coupon_code']+":", code_json['error_message'])
-    else:
-        print(ansi.RED+code_json['error_msg'])
-    print(ansi.END, end='')
+    process_results(response.json())
 
 
-def print_duplicates():
+def check_duplicates(source_codes):
     codes = set()
     dupes = set()
     with open(source_codes) as sc:
@@ -52,22 +54,9 @@ def print_duplicates():
 
 def main():
     print("session_id:", session_id)
-    print_duplicates()
+    check_duplicates(source_codes)
 
-    codes = []
-    with open(source_codes) as sc:
-        for line in sc:
-            strippedLine = line.replace('-', '').rstrip().upper()
-            unknownCount = strippedLine.count('?')
-            if unknownCount > 0:
-                cartesian_product = product(code_dict, repeat=unknownCount)
-                for tupl in cartesian_product:
-                    guess = strippedLine
-                    for char in tupl:
-                        guess = guess.replace('?', char, 1)
-                    codes.append(guess)
-            else:
-                codes.append(strippedLine)
+    codes = load_codes(source_codes)
     for code in codes:
         check_code(code)
 

@@ -32,6 +32,16 @@ headers = {
     'Connection': 'keep-alive'
 }
 
+# cookies = {
+#     'csrftoken': csrf_token,
+#     'op_session_id': session_id
+# }
+
+# headers = {
+#     'Origin': 'https://sso.pokemon.com',
+#     'Referer': 'https://sso.pokemon.com'
+# }
+
 
 class ansi:
     END = '\033[0m'
@@ -88,6 +98,26 @@ def solution1(response):
 #     print(ansi.END, end='')
 
 
+def load_codes(source_codes):
+    codes = []
+    with open(source_codes) as sc:
+        for line in sc:
+            strippedLine = line.replace('-', '').rstrip().upper()
+            if strippedLine == '':
+                continue
+            unknownCount = strippedLine.count('?')
+            if unknownCount > 0:
+                cartesian_product = product(code_dict, repeat=unknownCount)
+                for tupl in cartesian_product:
+                    guess = strippedLine
+                    for char in tupl:
+                        guess = guess.replace('?', char, 1)
+                    codes.append(guess)
+            else:
+                codes.append(strippedLine)
+    return codes
+
+
 def chunks(lst, n):
     """Yield successive n-sized chunks from lst."""
     for i in range(0, len(lst), n):
@@ -123,24 +153,9 @@ def main():
     print("session_id:", session_id)
     print("csrf_token:", csrf_token)
 
-    with open(source_codes) as sc:
-        codes = []
-        for line in sc:
-            strippedLine = line.replace('-', '').rstrip().upper()
-            if strippedLine == '':
-                break
-            unknownCount = strippedLine.count('?')
-            if unknownCount > 0:
-                cartesian_product = product(code_dict, repeat=unknownCount)
-                for tupl in cartesian_product:
-                    guess = strippedLine
-                    for char in tupl:
-                        guess = guess.replace('?', char, 1)
-                    codes.append(guess)
-            else:
-                codes.append(strippedLine)
-        for chunk in chunks(codes, limit):
-            redeem_codes(chunk)
+    codes = load_codes(source_codes)
+    for chunk in chunks(codes, limit):
+        redeem_codes(chunk)
 
 
 if __name__ == '__main__':
